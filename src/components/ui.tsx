@@ -1,14 +1,42 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 
-export function Section({ title, footer, children }: { title?: string; footer?: ReactNode; children: ReactNode }) {
+export function Section({
+  title,
+  footer,
+  action,
+  children,
+}: {
+  title?: string;
+  footer?: ReactNode;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
   return (
     <section className="mb-7">
-      {title && (
-        <h2 className="px-4 pb-2 text-xs font-semibold uppercase tracking-wide text-ios-secondary">{title}</h2>
+      {(title || action) && (
+        <div className="flex items-end justify-between px-4 pb-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-ios-secondary">{title}</h2>
+          {action}
+        </div>
       )}
       <div className="overflow-hidden rounded-ios bg-ios-card shadow-sm">{children}</div>
       {footer && <p className="px-4 pt-2 text-xs text-ios-secondary">{footer}</p>}
     </section>
+  );
+}
+
+export function CopyButton({ getText, label = 'Copiar' }: { getText: () => string; label?: string }) {
+  const [copied, setCopied] = useState(false);
+  function copy() {
+    void navigator.clipboard?.writeText(getText()).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
+  return (
+    <button onClick={copy} className="text-xs font-medium text-ios-blue active:opacity-50">
+      {copied ? '¡Copiado!' : label}
+    </button>
   );
 }
 

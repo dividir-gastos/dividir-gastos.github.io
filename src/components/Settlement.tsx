@@ -1,12 +1,31 @@
 import type { Group } from '../types';
 import { computeBalances, settle } from '../lib/calc';
 import { money } from '../lib/format';
-import { Section, Row } from './ui';
+import { Section, Row, CopyButton } from './ui';
 
 export function Settlement({ group }: { group: Group }) {
   const balances = computeBalances(group);
   const transfers = settle(balances);
   const totalGastado = group.expenses.reduce((acc, e) => acc + e.amount, 0);
+
+  const balancesText = () => {
+    const lines = balances.map((b) => {
+      const estado =
+        b.balance > 0.005
+          ? `le deben ${money(b.balance)}`
+          : b.balance < -0.005
+            ? `debe ${money(-b.balance)}`
+            : 'saldado';
+      return `• ${b.person.name}: ${estado} (puso ${money(b.paid)}, consumió ${money(b.consumed)})`;
+    });
+    return [`Balance por persona — ${group.name || 'Grupo'}`, ...lines, `Total gastado: ${money(totalGastado)}`].join('\n');
+  };
+
+  const transfersText = () => {
+    if (transfers.length === 0) return 'Todo saldado, nadie debe nada 🎉';
+    const lines = transfers.map((t) => `• ${t.fromName} le pasa a ${t.toName}: ${money(t.amount)}`);
+    return [`Quién le pasa a quién — ${group.name || 'Grupo'}`, ...lines].join('\n');
+  };
 
   if (group.people.length === 0 || group.expenses.length === 0) {
     return (
@@ -22,7 +41,11 @@ export function Settlement({ group }: { group: Group }) {
 
   return (
     <>
-      <Section title="Balance por persona" footer={`Total gastado: ${money(totalGastado)}`}>
+      <Section
+        title="Balance por persona"
+        footer={`Total gastado: ${money(totalGastado)}`}
+        action={<CopyButton getText={balancesText} />}
+      >
         {balances.map((b) => {
           const owed = b.balance > 0.005;
           const owes = b.balance < -0.005;
@@ -46,7 +69,11 @@ export function Settlement({ group }: { group: Group }) {
         })}
       </Section>
 
-      <Section title="Quién le pasa a quién" footer="Pagos mínimos para saldar todo.">
+      <Section
+        title="Quién le pasa a quién"
+        footer="Pagos mínimos para saldar todo."
+        action={<CopyButton getText={transfersText} />}
+      >
         {transfers.length === 0 ? (
           <Row>
             <span className="text-base text-ios-secondary">Nadie debe nada. Todo saldado. 🎉</span>
